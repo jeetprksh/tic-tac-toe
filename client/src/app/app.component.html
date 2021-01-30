@@ -1,1 +1,7 @@
-<div>Hello</div>
+<mat-grid-list cols="3" rowHeight="100px">
+  <div *ngFor="let row of board; let i = index">
+    <span *ngFor="let col of row; let j = index">
+      <mat-grid-tile (click)="move(i,j)">{{board[i][j]}}</mat-grid-tile>
+    </span>
+  </div>
+</mat-grid-list>

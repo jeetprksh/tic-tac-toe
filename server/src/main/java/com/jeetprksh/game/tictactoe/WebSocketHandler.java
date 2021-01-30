@@ -38,8 +38,8 @@ public class WebSocketHandler extends TextWebSocketHandler {
         int y = Integer.parseInt(data[1]);
         game.move(x, y, playerSessions.get(session));
 
-        String move = gameMessage.getMessage() + "_" + playerSessions.get(session).getId();
-        GameMessage playerMoveMessage = new GameMessage(GameEvent.PLAYER_MOVE.getValue(), move);
+        String moveInfo = gameMessage.getMessage() + "_" + playerSessions.get(session).getId() + "_" + playerSessions.get(session).getSymbol();
+        GameMessage playerMoveMessage = new GameMessage(GameEvent.PLAYER_MOVE.getValue(), moveInfo);
         String playerMoveMessageJson = new Gson().toJson(playerMoveMessage);
 
         for (WebSocketSession s : playerSessions.keySet()) {
@@ -59,7 +59,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
     try {
       Player player = game.createPlayer();
       playerSessions.put(session, player);
-      GameMessage gameMessage = new GameMessage(GameEvent.ONLINE_ACK.getValue(), Integer.toString(player.getId()));
+      GameMessage gameMessage = new GameMessage(GameEvent.ONLINE_ACK.getValue(), player.getId() + "_" + player.getSymbol());
       String gameMessageJson = new Gson().toJson(gameMessage);
       session.sendMessage(new TextMessage(gameMessageJson.getBytes(StandardCharsets.UTF_8)));
       logger.info("Added player " + player.getId() + ". Overall number of players: " + playerSessions.size());
