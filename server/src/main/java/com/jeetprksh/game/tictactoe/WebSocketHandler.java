@@ -36,14 +36,22 @@ public class WebSocketHandler extends TextWebSocketHandler {
         String[] data = gameMessage.getMessage().split("_");
         int x = Integer.parseInt(data[0]);
         int y = Integer.parseInt(data[1]);
-        game.move(x, y, playerSessions.get(session));
+        boolean isWinningMove = game.move(x, y, playerSessions.get(session));
 
         String moveInfo = gameMessage.getMessage() + "_" + playerSessions.get(session).getId() + "_" + playerSessions.get(session).getSymbol();
         GameMessage playerMoveMessage = new GameMessage(GameEvent.PLAYER_MOVE.getValue(), moveInfo);
         String playerMoveMessageJson = new Gson().toJson(playerMoveMessage);
-
         for (WebSocketSession s : playerSessions.keySet()) {
           s.sendMessage(new TextMessage(playerMoveMessageJson.getBytes(StandardCharsets.UTF_8)));
+        }
+
+        if (isWinningMove) {
+          String winInfo = GameEvent.RESULT.getValue() + "_WIN_" + playerSessions.get(session).getId();
+          GameMessage resultMessage = new GameMessage(GameEvent.RESULT.getValue(), winInfo);
+          String resultMessageJson = new Gson().toJson(resultMessage);
+          for (WebSocketSession s : playerSessions.keySet()) {
+            s.sendMessage(new TextMessage(resultMessageJson.getBytes(StandardCharsets.UTF_8)));
+          }
         }
       }
     } catch (Exception ex) {

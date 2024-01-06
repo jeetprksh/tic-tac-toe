@@ -8,10 +8,11 @@ import java.util.Stack;
 public class TicTacToe {
 
   private final int MAX_PLAYERS = 2;
-
   private final Cell[][] board = new Cell[3][3];
   private final List<Player> players = new ArrayList<>();
   private final Stack<Symbol> symbols = new Stack<>();
+  private final WinDecider winDecider = new WinDecider(board);
+  private final Random random = new Random();
 
   public TicTacToe() {
     reset();
@@ -21,7 +22,7 @@ public class TicTacToe {
     if (board[x][y] == null) {
       Cell cell = new Cell(player);
       board[x][y] = cell;
-      return isWiningMove();
+      return winDecider.isWiningMove(player);
     } else {
       throw new Exception("Wrong Move");
     }
@@ -41,13 +42,8 @@ public class TicTacToe {
     players.clear();
   }
 
-  private boolean isWiningMove() {
-    return false;
-  }
-
   public Player createPlayer() throws Exception {
     if (players.size() < MAX_PLAYERS) {
-      Random random = new Random();
       Player player = new Player(random.nextInt(100), symbols.pop().getSymbol());
       this.players.add(player);
       return player;
@@ -56,16 +52,6 @@ public class TicTacToe {
     }
   }
 
-  private static class Cell {
-    public final Player player;
 
-    public Cell(Player player) {
-     this.player = player;
-    }
-
-    public Player getPlayer() {
-      return player;
-    }
-  }
 
 }

@@ -4,7 +4,7 @@ public enum Symbol {
   ZERO('0'),
   CROSS('X');
 
-  private char symbol;
+  private final char symbol;
 
   Symbol(char symbol) {
     this.symbol = symbol;
