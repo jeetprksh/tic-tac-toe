@@ -32,13 +32,14 @@ public class WebSocketHandler extends TextWebSocketHandler {
     GameMessage gameMessage = new Gson().fromJson(payload, GameMessage.class);
     try {
       if (gameMessage.getType().equals(GameEvent.MOVE_ATTEMPT.getValue())) {
-        logger.info("Received Move event from " + playerSessions.get(session).getId());
+        Player player = playerSessions.get(session);
+        logger.info("Received Move event from " + player.getId());
         String[] data = gameMessage.getMessage().split("_");
         int x = Integer.parseInt(data[0]);
         int y = Integer.parseInt(data[1]);
-        boolean isWinningMove = game.move(x, y, playerSessions.get(session));
+        boolean isWinningMove = game.move(x, y, player);
 
-        String moveInfo = gameMessage.getMessage() + "_" + playerSessions.get(session).getId() + "_" + playerSessions.get(session).getSymbol();
+        String moveInfo = gameMessage.getMessage() + "_" + player.getId() + "_" + player.getSymbol();
         GameMessage playerMoveMessage = new GameMessage(GameEvent.PLAYER_MOVE.getValue(), moveInfo);
         String playerMoveMessageJson = new Gson().toJson(playerMoveMessage);
         for (WebSocketSession s : playerSessions.keySet()) {
@@ -46,7 +47,8 @@ public class WebSocketHandler extends TextWebSocketHandler {
         }
 
         if (isWinningMove) {
-          String winInfo = GameEvent.RESULT.getValue() + "_WIN_" + playerSessions.get(session).getId();
+          logger.info("Winning move by the player " + player.getId());
+          String winInfo = GameEvent.RESULT.getValue() + "_WIN_" + player.getId();
           GameMessage resultMessage = new GameMessage(GameEvent.RESULT.getValue(), winInfo);
           String resultMessageJson = new Gson().toJson(resultMessage);
           for (WebSocketSession s : playerSessions.keySet()) {
