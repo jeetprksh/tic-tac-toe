@@ -1,7 +1,12 @@
 import { Component } from '@angular/core';
 import { Message } from '../data/Message';
 
-const WEBSOCKET_URL = 'ws://localhost:8185/websocket';
+const WEBSOCKET_URL = (() => {
+  const host = window.location.hostname || 'localhost';
+  const port = '8185';
+  const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+  return `${protocol}://${host}:${port}/websocket`;
+})();
 
 @Component({
   selector: 'app-root',
