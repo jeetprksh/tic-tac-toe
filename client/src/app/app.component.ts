@@ -1,19 +1,20 @@
-import {Component} from '@angular/core';
-import {Message} from '../data/Message';
+import { Component } from '@angular/core';
+import { Message } from '../data/Message';
 
 const WEBSOCKET_URL = 'ws://localhost:8185/websocket';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
-  styleUrls: ['./app.component.css']
+  styleUrls: ['./app.component.css'],
+  standalone: false
 })
 export class AppComponent {
 
   websocket = new WebSocket(WEBSOCKET_URL);
-  board: string[][];
-  id: string;
-  symbol: string;
+  board: string[][] = [];
+  id: string = '';
+  symbol: string = '';
 
   constructor() {
     this.initializeBoard();
@@ -22,35 +23,35 @@ export class AppComponent {
 
   initializeBoard() {
     this.board = [];
-    for(var i = 0; i < 3; i++) {
+    for (let i = 0; i < 3; i++) {
       this.board[i] = [];
-      for (var j = 0; j < 3; j++) {
+      for (let j = 0; j < 3; j++) {
         this.board[i][j] = "-";
       }
     }
   }
 
-  move(i, j) {
+  move(i: number, j: number) {
     console.log(i + " " + j);
-    let message: Message = {
+    const message: Message = {
       type: 'MOVE_ATTEMPT',
       message: i + "_" + j
-    }
+    };
     this.websocket.send(JSON.stringify(message));
   }
 
   startListening() {
     this.websocket.onmessage = (event: MessageEvent) => {
-      let message: Message = JSON.parse(event.data);
-      if (message.type == 'ONLINE_ACK') {
+      const message: Message = JSON.parse(event.data);
+      if (message.type === 'ONLINE_ACK') {
         this.id = message.message.split("_")[0];
         this.symbol = message.message.split("_")[1];
-      } else if (message.type == 'PLAYER_MOVE') {
-        var x = message.message.split("_")[0];
-        var y = message.message.split("_")[1];
-        var symbol = message.message.split("_")[3];
+      } else if (message.type === 'PLAYER_MOVE') {
+        const x = parseInt(message.message.split("_")[0], 10);
+        const y = parseInt(message.message.split("_")[1], 10);
+        const symbol = message.message.split("_")[3];
         this.board[x][y] = symbol;
-      } else if (message.type == 'GAME_ERROR') {
+      } else if (message.type === 'GAME_ERROR') {
         console.error(message);
       }
     };
