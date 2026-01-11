@@ -1,9 +1,9 @@
 package com.jeetprksh.game.tictactoe;
 
 import com.google.gson.Gson;
-import com.jeetprksh.game.tictactoe.game.GameMessage;
-import com.jeetprksh.game.tictactoe.game.Player;
-import com.jeetprksh.game.tictactoe.game.TicTacToe;
+import com.google.gson.reflect.TypeToken;
+import com.jeetprksh.game.tictactoe.event.*;
+import com.jeetprksh.game.tictactoe.game.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
@@ -30,28 +30,26 @@ public class WebSocketHandler extends TextWebSocketHandler {
     String payload = message.getPayload();
     logger.info("Received message: " + payload);
     try {
-      GameMessage gameMessage = new Gson().fromJson(payload, GameMessage.class);
-      if (gameMessage.getType().equals(GameEvent.MOVE_ATTEMPT.getValue())) {
+      GameMessage<MoveAttemptEvent> gameMessage = new Gson().fromJson(payload, new TypeToken<GameMessage<MoveAttemptEvent>>(){}.getType());
+      if (gameMessage.eventType().equals(GameEvent.MOVE_ATTEMPT.getValue())) {
         handleMoveAttemptEvent(session, gameMessage);
       }
     } catch (Exception ex) {
-      GameMessage errorMessage = new GameMessage(GameEvent.GAME_ERROR.getValue(), ex.getLocalizedMessage());
+      GameMessage<ErrorEvent> errorMessage = new GameMessage<>(GameEvent.GAME_ERROR.getValue(), new ErrorEvent(ex.getLocalizedMessage()));
       String gameMessageJson = new Gson().toJson(errorMessage);
       session.sendMessage(new TextMessage(gameMessageJson.getBytes(StandardCharsets.UTF_8)));
       logger.info("Error: " + ex.getLocalizedMessage());
     }
   }
 
-  private void handleMoveAttemptEvent(WebSocketSession session, GameMessage gameMessage) throws Exception {
+  private void handleMoveAttemptEvent(WebSocketSession session, GameMessage<MoveAttemptEvent> gameMessage) throws Exception {
     Player player = playerSessions.get(session);
     logger.info("Received Move event from " + player.getId());
-    String[] data = gameMessage.getMessage().split("_");
-    int x = Integer.parseInt(data[0]);
-    int y = Integer.parseInt(data[1]);
-    boolean isWinningMove = game.move(x, y, player);
+    MoveAttemptEvent event = gameMessage.data();
+    boolean isWinningMove = game.move(event.x(), event.y(), player);
 
-    String moveInfo = gameMessage.getMessage() + "_" + player.getId() + "_" + player.getSymbol();
-    GameMessage playerMoveMessage = new GameMessage(GameEvent.PLAYER_MOVE.getValue(), moveInfo);
+    PlayerMoveEvent playerMoveEvent = new PlayerMoveEvent(event.x(), event.y(), player.getId(), player.getSymbol());
+    GameMessage<PlayerMoveEvent> playerMoveMessage = new GameMessage<>(GameEvent.PLAYER_MOVE.getValue(), playerMoveEvent);
     String playerMoveMessageJson = new Gson().toJson(playerMoveMessage);
     for (WebSocketSession s : playerSessions.keySet()) {
       s.sendMessage(new TextMessage(playerMoveMessageJson.getBytes(StandardCharsets.UTF_8)));
@@ -59,8 +57,8 @@ public class WebSocketHandler extends TextWebSocketHandler {
 
     if (isWinningMove) {
       logger.info("Winning move by the player " + player.getId());
-      String winInfo = GameEvent.RESULT.getValue() + "_WIN_" + player.getId();
-      GameMessage resultMessage = new GameMessage(GameEvent.RESULT.getValue(), winInfo);
+      ResultEvent resultEvent = new ResultEvent("WIN", player.getId());
+      GameMessage<ResultEvent> resultMessage = new GameMessage<>(GameEvent.RESULT.getValue(), resultEvent);
       String resultMessageJson = new Gson().toJson(resultMessage);
       for (WebSocketSession s : playerSessions.keySet()) {
         s.sendMessage(new TextMessage(resultMessageJson.getBytes(StandardCharsets.UTF_8)));
@@ -73,12 +71,12 @@ public class WebSocketHandler extends TextWebSocketHandler {
     try {
       Player player = game.addPlayer();
       playerSessions.put(session, player);
-      GameMessage gameMessage = new GameMessage(GameEvent.ONLINE_ACK.getValue(), player.getId() + "_" + player.getSymbol());
+      GameMessage<AckEvent> gameMessage = new GameMessage<>(GameEvent.ONLINE_ACK.getValue(), new AckEvent());
       String gameMessageJson = new Gson().toJson(gameMessage);
       session.sendMessage(new TextMessage(gameMessageJson.getBytes(StandardCharsets.UTF_8)));
       logger.info("Added player " + player.getId() + ". Overall number of players: " + playerSessions.size());
     } catch (Exception ex) {
-      GameMessage gameMessage = new GameMessage(GameEvent.GAME_ERROR.getValue(), ex.getLocalizedMessage());
+      GameMessage<ErrorEvent> gameMessage = new GameMessage<>(GameEvent.GAME_ERROR.getValue(), new ErrorEvent(ex.getLocalizedMessage()));
       String gameMessageJson = new Gson().toJson(gameMessage);
       session.sendMessage(new TextMessage(gameMessageJson.getBytes(StandardCharsets.UTF_8)));
       session.close();

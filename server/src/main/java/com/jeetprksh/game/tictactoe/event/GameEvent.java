@@ -1,4 +1,4 @@
-package com.jeetprksh.game.tictactoe;
+package com.jeetprksh.game.tictactoe.event;
 
 public enum GameEvent {
   AVAILABLE_GAMES("AVAILABLE_GAMES"),
