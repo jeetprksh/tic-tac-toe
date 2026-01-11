@@ -1,0 +1,6 @@
+<div id="toast-container">
+  <div *ngFor="let t of toasts" class="app-toast" role="status" aria-live="polite">
+    <div class="app-toast-message">{{ t.message }}</div>
+    <button class="app-toast-close" (click)="remove(t.id)" aria-label="Close">×</button>
+  </div>
+</div>
