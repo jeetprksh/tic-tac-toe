@@ -23,6 +23,13 @@ export class AppComponent {
   symbol: string = '';
 
   constructor() {
+    // register ToastService on window so the component can delegate to it without import cycles
+    try {
+      (window as any).__toastService = (window as any).__toastService || null;
+    } catch (e) {
+      // noop
+    }
+
     this.initializeBoard();
     this.startListening();
   }
@@ -84,80 +91,34 @@ export class AppComponent {
         }
 
       } else if (message.eventType === 'GAME_ERROR') {
-        // Expecting { data: { message: string } }
+        // show message in toast
         let errMsg = 'Unknown error';
         if (typeof message.data === 'object' && message.data !== null && 'message' in message.data) {
           errMsg = String((message.data as any).message);
         } else if (typeof message.data === 'string') {
           errMsg = message.data;
         } else {
-          try {
-            errMsg = JSON.stringify(message.data);
-          } catch (e) {
-            // keep default
-          }
+          try { errMsg = JSON.stringify(message.data); } catch (e) { /* keep fallback */ }
         }
-        console.error('GAME_ERROR:', errMsg);
-        this.showToast(errMsg);
+        this.toast(errMsg);
       }
     };
   }
 
-  // Show a Bootstrap toast in the top-right corner
-  showToast(message: string) {
-    // Ensure a container exists
-    let container = document.getElementById('toast-container');
-    if (!container) {
-      container = document.createElement('div');
-      container.id = 'toast-container';
-      container.style.position = 'fixed';
-      container.style.top = '1rem';
-      container.style.right = '1rem';
-      container.style.zIndex = '1060';
-      document.body.appendChild(container);
-    }
-
-    const toast = document.createElement('div');
-    toast.className = 'toast align-items-center text-bg-danger border-0 mb-2';
-    toast.setAttribute('role', 'alert');
-    toast.setAttribute('aria-live', 'assertive');
-    toast.setAttribute('aria-atomic', 'true');
-
-    toast.innerHTML = `
-      <div class="d-flex">
-        <div class="toast-body">${this.escapeHtml(message)}</div>
-        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-      </div>
-    `;
-
-    container.appendChild(toast);
-
-    // Use Bootstrap's JS Toast if available
-    const bs = (window as any).bootstrap;
+  toast(message: string) {
+    // delegate to ToastService if available
     try {
-      if (bs && bs.Toast) {
-        const t = new bs.Toast(toast, { autohide: true, delay: 8000 });
-        t.show();
-        // remove element after hidden
-        toast.addEventListener('hidden.bs.toast', () => toast.remove());
-      } else {
-        // fallback: auto remove after 8s
-        setTimeout(() => toast.remove(), 8000);
+      // import lazily to avoid circular deps in some setups
+      const svc = (window as any).__toastService as any;
+      if (svc && typeof svc.show === 'function') {
+        svc.show(message);
+        return;
       }
     } catch (e) {
-      // ensure removal even on error
-      setTimeout(() => toast.remove(), 8000);
+      // ignore
     }
-  }
-
-  // basic HTML escape to avoid injection
-  escapeHtml(unsafe: string) {
-    return unsafe
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
+    // fallback: simple alert
+    console.warn('Toast fallback:', message);
   }
 
 }

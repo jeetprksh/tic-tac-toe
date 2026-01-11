@@ -2,8 +2,7 @@ import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 
 import { AppComponent } from './app.component';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import {MatGridListModule} from '@angular/material/grid-list';
+import { ToastContainerComponent } from './toast-container.component';
 
 @NgModule({
   declarations: [
@@ -11,8 +10,7 @@ import {MatGridListModule} from '@angular/material/grid-list';
   ],
   imports: [
     BrowserModule,
-    BrowserAnimationsModule,
-    MatGridListModule
+    ToastContainerComponent
   ],
   providers: [],
   bootstrap: [AppComponent]
