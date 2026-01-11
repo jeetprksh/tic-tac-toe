@@ -32,29 +32,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
     try {
       GameMessage gameMessage = new Gson().fromJson(payload, GameMessage.class);
       if (gameMessage.getType().equals(GameEvent.MOVE_ATTEMPT.getValue())) {
-        Player player = playerSessions.get(session);
-        logger.info("Received Move event from " + player.getId());
-        String[] data = gameMessage.getMessage().split("_");
-        int x = Integer.parseInt(data[0]);
-        int y = Integer.parseInt(data[1]);
-        boolean isWinningMove = game.move(x, y, player);
-
-        String moveInfo = gameMessage.getMessage() + "_" + player.getId() + "_" + player.getSymbol();
-        GameMessage playerMoveMessage = new GameMessage(GameEvent.PLAYER_MOVE.getValue(), moveInfo);
-        String playerMoveMessageJson = new Gson().toJson(playerMoveMessage);
-        for (WebSocketSession s : playerSessions.keySet()) {
-          s.sendMessage(new TextMessage(playerMoveMessageJson.getBytes(StandardCharsets.UTF_8)));
-        }
-
-        if (isWinningMove) {
-          logger.info("Winning move by the player " + player.getId());
-          String winInfo = GameEvent.RESULT.getValue() + "_WIN_" + player.getId();
-          GameMessage resultMessage = new GameMessage(GameEvent.RESULT.getValue(), winInfo);
-          String resultMessageJson = new Gson().toJson(resultMessage);
-          for (WebSocketSession s : playerSessions.keySet()) {
-            s.sendMessage(new TextMessage(resultMessageJson.getBytes(StandardCharsets.UTF_8)));
-          }
-        }
+        handleMoveAttemptEvent(session, gameMessage);
       }
     } catch (Exception ex) {
       GameMessage errorMessage = new GameMessage(GameEvent.GAME_ERROR.getValue(), ex.getLocalizedMessage());
@@ -64,10 +42,36 @@ public class WebSocketHandler extends TextWebSocketHandler {
     }
   }
 
+  private void handleMoveAttemptEvent(WebSocketSession session, GameMessage gameMessage) throws Exception {
+    Player player = playerSessions.get(session);
+    logger.info("Received Move event from " + player.getId());
+    String[] data = gameMessage.getMessage().split("_");
+    int x = Integer.parseInt(data[0]);
+    int y = Integer.parseInt(data[1]);
+    boolean isWinningMove = game.move(x, y, player);
+
+    String moveInfo = gameMessage.getMessage() + "_" + player.getId() + "_" + player.getSymbol();
+    GameMessage playerMoveMessage = new GameMessage(GameEvent.PLAYER_MOVE.getValue(), moveInfo);
+    String playerMoveMessageJson = new Gson().toJson(playerMoveMessage);
+    for (WebSocketSession s : playerSessions.keySet()) {
+      s.sendMessage(new TextMessage(playerMoveMessageJson.getBytes(StandardCharsets.UTF_8)));
+    }
+
+    if (isWinningMove) {
+      logger.info("Winning move by the player " + player.getId());
+      String winInfo = GameEvent.RESULT.getValue() + "_WIN_" + player.getId();
+      GameMessage resultMessage = new GameMessage(GameEvent.RESULT.getValue(), winInfo);
+      String resultMessageJson = new Gson().toJson(resultMessage);
+      for (WebSocketSession s : playerSessions.keySet()) {
+        s.sendMessage(new TextMessage(resultMessageJson.getBytes(StandardCharsets.UTF_8)));
+      }
+    }
+  }
+
   @Override
   public void afterConnectionEstablished(WebSocketSession session) throws Exception {
     try {
-      Player player = game.createPlayer();
+      Player player = game.addPlayer();
       playerSessions.put(session, player);
       GameMessage gameMessage = new GameMessage(GameEvent.ONLINE_ACK.getValue(), player.getId() + "_" + player.getSymbol());
       String gameMessageJson = new Gson().toJson(gameMessage);
