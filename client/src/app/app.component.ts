@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { Message } from '../data/Message';
-import { MatSnackBar } from '@angular/material/snack-bar';
+
 
 const WEBSOCKET_URL = (() => {
   const host = window.location.hostname || 'localhost';
@@ -22,7 +22,7 @@ export class AppComponent {
   id: string = '';
   symbol: string = '';
 
-  constructor(private snackBar: MatSnackBar) {
+  constructor() {
     this.initializeBoard();
     this.startListening();
   }
@@ -98,9 +98,66 @@ export class AppComponent {
           }
         }
         console.error('GAME_ERROR:', errMsg);
-        this.snackBar.open(errMsg, 'Close', { duration: 8000, horizontalPosition: 'end', verticalPosition: 'top' });
+        this.showToast(errMsg);
       }
     };
+  }
+
+  // Show a Bootstrap toast in the top-right corner
+  showToast(message: string) {
+    // Ensure a container exists
+    let container = document.getElementById('toast-container');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'toast-container';
+      container.style.position = 'fixed';
+      container.style.top = '1rem';
+      container.style.right = '1rem';
+      container.style.zIndex = '1060';
+      document.body.appendChild(container);
+    }
+
+    const toast = document.createElement('div');
+    toast.className = 'toast align-items-center text-bg-danger border-0 mb-2';
+    toast.setAttribute('role', 'alert');
+    toast.setAttribute('aria-live', 'assertive');
+    toast.setAttribute('aria-atomic', 'true');
+
+    toast.innerHTML = `
+      <div class="d-flex">
+        <div class="toast-body">${this.escapeHtml(message)}</div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+    `;
+
+    container.appendChild(toast);
+
+    // Use Bootstrap's JS Toast if available
+    const bs = (window as any).bootstrap;
+    try {
+      if (bs && bs.Toast) {
+        const t = new bs.Toast(toast, { autohide: true, delay: 8000 });
+        t.show();
+        // remove element after hidden
+        toast.addEventListener('hidden.bs.toast', () => toast.remove());
+      } else {
+        // fallback: auto remove after 8s
+        setTimeout(() => toast.remove(), 8000);
+      }
+    } catch (e) {
+      // ensure removal even on error
+      setTimeout(() => toast.remove(), 8000);
+    }
+  }
+
+  // basic HTML escape to avoid injection
+  escapeHtml(unsafe: string) {
+    return unsafe
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
   }
 
 }
