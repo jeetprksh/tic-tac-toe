@@ -28,9 +28,9 @@ public class WebSocketHandler extends TextWebSocketHandler {
   @Override
   public void handleTextMessage(WebSocketSession session, TextMessage message) throws IOException {
     String payload = message.getPayload();
-    logger.info("Received game event: " + payload);
-    GameMessage gameMessage = new Gson().fromJson(payload, GameMessage.class);
+    logger.info("Received message: " + payload);
     try {
+      GameMessage gameMessage = new Gson().fromJson(payload, GameMessage.class);
       if (gameMessage.getType().equals(GameEvent.MOVE_ATTEMPT.getValue())) {
         Player player = playerSessions.get(session);
         logger.info("Received Move event from " + player.getId());
