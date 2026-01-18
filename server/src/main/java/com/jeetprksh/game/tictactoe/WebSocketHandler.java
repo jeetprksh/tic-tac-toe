@@ -1,6 +1,7 @@
 package com.jeetprksh.game.tictactoe;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
 import com.jeetprksh.game.tictactoe.event.*;
 import com.jeetprksh.game.tictactoe.game.*;
@@ -30,8 +31,9 @@ public class WebSocketHandler extends TextWebSocketHandler {
     String payload = message.getPayload();
     logger.info("Received message: " + payload);
     try {
-      GameMessage<MoveAttemptEvent> gameMessage = new Gson().fromJson(payload, new TypeToken<GameMessage<MoveAttemptEvent>>(){}.getType());
-      if (gameMessage.eventType().equals(GameEvent.MOVE_ATTEMPT.getValue())) {
+      String eventType = JsonParser.parseString(payload).getAsJsonObject().get("eventType").getAsString();
+      if (eventType.equals(GameEvent.MOVE_ATTEMPT.getValue())) {
+        GameMessage<MoveAttemptEvent> gameMessage = new Gson().fromJson(payload, new TypeToken<GameMessage<MoveAttemptEvent>>(){}.getType());
         handleMoveAttemptEvent(session, gameMessage);
       }
     } catch (Exception ex) {
