@@ -1,7 +1,7 @@
 package com.jeetprksh.game.tictactoe.game;
 
-import com.jeetprksh.game.tictactoe.event.Event;
+import com.jeetprksh.game.tictactoe.message.Message;
 
-public record GameMessage<T extends Event>(String eventType, T data) {
+public record GameMessage<T extends Message>(String messageType, T data) {
 
 }

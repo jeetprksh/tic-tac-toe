@@ -1,6 +1,6 @@
-package com.jeetprksh.game.tictactoe.event;
+package com.jeetprksh.game.tictactoe.message;
 
-public enum GameEvent {
+public enum MessageType {
   AVAILABLE_GAMES("AVAILABLE_GAMES"),
   START_NEW("START_NEW"),
   PLAYER_JOINED("PLAYER_JOINED"),
@@ -13,7 +13,7 @@ public enum GameEvent {
 
   private final String event;
 
-  GameEvent(String event) {
+  MessageType(String event) {
     this.event = event;
   }
 
