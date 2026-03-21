@@ -1,6 +1,29 @@
 <app-toast-container></app-toast-container>
 
-<div class="board-grid" role="grid" aria-label="Tic tac toe board">
+<div *ngIf="!showBoard" class="main-container">
+  <div *ngIf="showAvailableGames" class="games-container">
+    <h2>Tic Tac Toe</h2>
+    <h5>Available Games <span class="material-icons refresh-icon" (click)="refreshGames()">refresh</span></h5>
+    <div class="games-grid">
+      <div *ngFor="let game of availableGames" class="game-card" [style.background-color]="getGameCardBackground(game.gameId)">
+        <div class="game-id">Game #{{ game.gameId }}</div>
+        <div class="players-count">{{ game.players.length }} Player(s)</div>
+        <div class="players-list">
+          <div *ngFor="let player of game.players" class="player-card" [style.background-color]="getPlayerCardBackground(player.playerId)">
+            <span class="player-id">{{ player.playerId }}</span>
+          </div>
+        </div>
+        <button *ngIf="game.players.length < 2" class="enter-button" (click)="joinGame(game.gameId)">Enter</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="start-screen">
+    <button class="start-button" (click)="startGame()">Start Game</button>
+  </div>
+</div>
+
+<div *ngIf="showBoard" class="board-grid" role="grid" aria-label="Tic tac toe board">
   <ng-container *ngFor="let row of board; let i = index">
     <ng-container *ngFor="let col of row; let j = index">
       <div class="board-cell" role="gridcell" (click)="move(i,j)">{{ board[i][j] }}</div>

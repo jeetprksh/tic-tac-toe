@@ -19,8 +19,12 @@ export class AppComponent {
 
   websocket = new WebSocket(WEBSOCKET_URL);
   board: string[][] = [];
-  id: string = '';
+  playerId: string = '';
   symbol: string = '';
+  gameId: number = 0;
+  showBoard: boolean = false;
+  showAvailableGames: boolean = false;
+  availableGames: any[] = [];
 
   constructor() {
     // register ToastService on window so the component can delegate to it without import cycles
@@ -47,8 +51,43 @@ export class AppComponent {
   move(i: number, j: number) {
     console.log(i + " " + j);
     const message: Message = {
-      eventType: 'MOVE_ATTEMPT',
+      messageType: 'MOVE_ATTEMPT',
       data: { x: i, y: j }
+    };
+    this.websocket.send(JSON.stringify(message));
+  }
+
+  startGame() {
+    const message: Message = {
+      messageType: 'START_NEW',
+      data: '' // Empty string for start new game data
+    };
+    this.websocket.send(JSON.stringify(message));
+  }
+
+  joinGame(gameId: number) {
+    const message: Message = {
+      messageType: 'JOIN_GAME',
+      data: { gameId: gameId }
+    };
+    this.websocket.send(JSON.stringify(message));
+    this.showBoard = true;
+    this.showAvailableGames = false;
+  }
+
+  refreshGames() {
+    const message: Message = {
+      messageType: 'LIST_GAMES',
+      data: '' // Empty string for list games data
+    };
+    this.websocket.send(JSON.stringify(message));
+  }
+
+  sendNewPlayerMessage() {
+    console.log('Sending new player message');
+    const message: Message = {
+      messageType: 'NEW_PLAYER',
+      data: '' // Empty string for new player data
     };
     this.websocket.send(JSON.stringify(message));
   }
@@ -57,40 +96,35 @@ export class AppComponent {
     this.websocket.onmessage = (event: MessageEvent) => {
       const message: Message = JSON.parse(event.data);
 
-      if (message.eventType === 'ONLINE_ACK') {
-        // ONLINE_ACK may still be a legacy string like "id_symbol" or a structured object
-        if (typeof message.data === 'string') {
-          const parts = message.data.split("_");
-          this.id = parts[0];
-          this.symbol = parts[1];
-        } else if (typeof message.data === 'object' && message.data !== null) {
-          // structured { id, symbol }
-          const d: any = message.data;
-          this.id = String(d.id ?? this.id);
-          this.symbol = String(d.symbol ?? this.symbol);
+      if (message.messageType === 'ONLINE_ACK') {
+        console.log('Received ONLINE_ACK:', message.data);
+        this.sendNewPlayerMessage(); 
+      } else if (message.messageType === 'AVAILABLE_GAMES') {
+        console.log('Received AVAILABLE_GAMES:', message.data);
+        const d: any = message.data;
+        if (d.availableGames) {
+          this.availableGames = d.availableGames;
+          this.showAvailableGames = true;
         }
-
-      } else if (message.eventType === 'PLAYER_MOVE') {
-        // Expected structured payload:
-        // { data: { x: number, y: number, playerId: number, playerSymbol: string } }
-        if (typeof message.data === 'object' && message.data !== null && 'x' in message.data && 'y' in message.data) {
-          const d: any = message.data;
-          const x = Number(d.x);
-          const y = Number(d.y);
-          const symbol = d.playerSymbol ?? d.symbol ?? 'X';
-          this.board[x][y] = symbol;
-        } else if (typeof message.data === 'string') {
-          // handle legacy string formats (e.g., "x_y_..._symbol")
-          const parts = message.data.split("_");
-          const x = parseInt(parts[0], 10);
-          const y = parseInt(parts[1], 10);
-          const symbol = parts[3] ?? parts[2] ?? 'X';
-          this.board[x][y] = symbol;
-        } else {
-          console.error('Malformed PLAYER_MOVE message', message);
+      } else if (message.messageType === 'NEW_GAME_STARTED') {
+        console.log('Received NEW_GAME_STARTED:', message.data);
+        const d: any = message.data;
+        if (d.gameInfo) {
+          this.gameId = d.gameInfo.id;
+          if (d.gameInfo.players && d.gameInfo.players.length > 0) {
+            const firstPlayer = d.gameInfo.players[0];
+            this.playerId = String(firstPlayer.id);
+            this.symbol = firstPlayer.symbol;
+          }
+          this.showBoard = true;
         }
-
-      } else if (message.eventType === 'GAME_ERROR') {
+      } else if (message.messageType === 'PLAYER_MOVE') {
+        const d: any = message.data;
+        const x = Number(d.x);
+        const y = Number(d.y);
+        const symbol = d.playerSymbol ?? d.symbol ?? 'X';
+        this.board[x][y] = symbol;
+      } else if (message.messageType === 'GAME_ERROR') {
         // show message in toast
         let errMsg = 'Unknown error';
         if (typeof message.data === 'object' && message.data !== null && 'message' in message.data) {
@@ -103,6 +137,30 @@ export class AppComponent {
         this.toast(errMsg);
       }
     };
+  }
+
+  getGameCardBackground(gameId: number): string {
+    // Generate a translucent color based on game ID hash
+    const hash = this.simpleHash(gameId.toString());
+    const hue = hash % 360;
+    return `hsla(${hue}, 70%, 85%, 0.8)`;
+  }
+
+  getPlayerCardBackground(playerId: number): string {
+    // Generate a random color based on player ID hash
+    const hash = this.simpleHash(playerId.toString());
+    const hue = hash % 360;
+    return `hsl(${hue}, 65%, 60%)`;
+  }
+
+  private simpleHash(str: string): number {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+    return Math.abs(hash);
   }
 
   toast(message: string) {
