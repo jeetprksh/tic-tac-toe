@@ -1,72 +1,95 @@
 # tic-tac-toe
 
-A small web-based Tic-Tac-Toe game written with an Angular 19 frontend and a Spring Boot 4 backend that communicates with the client using a WebSocket endpoint.
+Web-based Tic-Tac-Toe with:
+- Frontend: Angular 19 in `client/` (no `@angular/material`, renders through custom CSS grid now)
+- Backend: Spring Boot 4 in `server/` (Java 21, WebSocket endpoint `/websocket`)
+- Docker + compose: runs frontend in Nginx and backend in Spring Boot within isolated services
 
 ---
 
-## 🚀 Quick overview
-- **Frontend:** Angular 19 app (client/) — built to static assets and served by Nginx in Docker.
-- **Backend:** Spring Boot 4 application (server/) — exposes a WebSocket at `ws://<host>:8185/websocket` and runs on port **8185**.
-- **Orchestration:** `docker-compose.yml` starts both services together so you can run the whole stack with one command.
-
----
 
 ## ✅ Prerequisites
-- Docker (20+ recommended)
-- Docker Compose (v2 integrated in Docker Desktop)
-- (Optional for development) Node 20+, NPM, Maven/Java 21
+### Docker flow (recommended)
+- Docker Desktop / Engine
+- Docker Compose (v2 embedded in Docker Desktop)
+
+### Local dev (no Docker)
+- Node 20+, npm (for frontend)
+- Java 21 (for backend)
+- Maven or Maven wrapper (`mvnw`)
 
 ---
 
-## 🔧 Build & run with Docker Compose
-From the repository root:
+## 🔥 Run with Docker Compose (full stack)
+From repo root:
 
 ```bash
-# Build images and start services in the background
 docker compose up --build -d
+```
 
-# Check container status
+- Frontend: `http://localhost:4200`
+- Backend WS: `ws://localhost:8185/websocket`
+
+Check status:
+```bash
 docker compose ps
+```
 
-# Tail logs (backend / frontend)
-docker compose logs -f backend
+View logs:
+```bash
 docker compose logs -f frontend
+docker compose logs -f backend
+```
 
-# Stop & remove containers
+Stop and remove:
+```bash
 docker compose down
 ```
 
-- Frontend will be available at: `http://localhost:4200`
-- WebSocket endpoint: `ws://localhost:8185/websocket` (the frontend constructs the URL at runtime).
-
-> ⚠️ If you still see the nginx welcome page after starting the frontend, try a hard refresh (Ctrl+F5) or open the site in an incognito window — sometimes the browser caches the default nginx page. If that doesn’t help, rebuild the frontend image: `docker compose up --build --force-recreate frontend -d` or remove the image and rebuild.
+### Verify
+- open browser devtools, confirm UI game board shows.
+- check WS connection to `/websocket` is established.
 
 ---
 
-## 🧑‍💻 Development (run locally without Docker)
-Frontend:
+## 🛠️ Local development (without Docker)
+### Frontend
 ```bash
 cd client
 npm install
-npm start          # runs ng serve on the host (usually port 4200)
+npm run build -- --configuration production    # or npm start for live dev
 ```
-Backend:
+
+To run in dev mode with live reload:
+```bash
+npm start
+```
+
+### Backend
 ```bash
 cd server
-# Using Maven wrapper
 ./mvnw spring-boot:run
-# or build and run jar
+```
+
+or build + run:
+```bash
 ./mvnw -DskipTests package
 java -jar target/*.jar
 ```
 
-During development, the client will connect to `ws://localhost:8185/websocket` by default. You can inspect the WebSocket in browser DevTools → Network → WS.
+- App will stay on `http://localhost:4200` in frontend, and `ws://localhost:8185/websocket` for backend socket.
 
 ---
 
-## 🧪 Troubleshooting tips
-- Make sure nothing else on the host is listening on **4200** or **8185**.
-- If WebSocket fails, check backend logs (`docker compose logs -f backend`) and browser console for errors (CORS, connection refused).
-- Confirm the backend is reachable: `curl -v http://localhost:8185` (should return 200 or at least an app response).
+## 🧾 Common checks
+1. **Cache**: Remove `.angular/cache` and `dist` if behavior looks stale.
+2. **Nginx welcome page**: trigger hard refresh (Ctrl+F5) after re-deploy.
+3. **Material leftovers**: no `mat-` selectors in `client/dist/client` after proper rebuild.
+4. **Backend health**: `curl -v http://localhost:8185` (HTTP root serves Spring Boot endpoint). 
 
 ---
+
+## 📌 Notes
+- The app uses runtime WebSocket URL construction in `app.component.ts` to support local and container hostnames.
+- The project now departs from Angular Material and uses a clean plain CSS 3x3 grid for game board rendering.
+- Docker ensures production artifacts are independent of local dev env and uses `npm ci` for deterministic install.
