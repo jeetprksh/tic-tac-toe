@@ -13,7 +13,9 @@ import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -22,7 +24,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
 
   private final Logger logger = Logger.getLogger(WebSocketHandler.class.getName());
 
-  private final TicTacToe game = new TicTacToe();
+  private final List<TicTacToe> games = new ArrayList<>();
 
   private final Map<WebSocketSession, Player> playerSessions = new HashMap<>();
 
@@ -33,22 +35,60 @@ public class WebSocketHandler extends TextWebSocketHandler {
     try {
       String messageType = JsonParser.parseString(payload).getAsJsonObject().get("messageType").getAsString();
       if (messageType.equals(MessageType.MOVE_ATTEMPT.getValue())) {
-        GameMessage<MoveAttemptMessage> gameMessage = new Gson().fromJson(payload, new TypeToken<GameMessage<MoveAttemptMessage>>(){}.getType());
+        GameMessage<MoveAttemptMessage> gameMessage = new Gson().fromJson(
+                payload, new TypeToken<GameMessage<MoveAttemptMessage>>(){}.getType());
         handleMoveAttemptEvent(session, gameMessage);
       }
+      if (messageType.equals(MessageType.NEW_PLAYER.getValue())
+              || messageType.equals(MessageType.LIST_GAMES.getValue())) {
+        sendAvailableGamesToSession(session);
+      }
+      if (messageType.equals(MessageType.START_NEW.getValue())) {
+        startNewGame(session);
+      }
+      if (messageType.equals(MessageType.JOIN_GAME.getValue())) {
+        GameMessage<JoinGameMessage> joinMessage = new Gson().fromJson(
+                payload, new TypeToken<GameMessage<JoinGameMessage>>(){}.getType());
+        joinGame(session, joinMessage);
+      }
     } catch (Exception ex) {
-      GameMessage<ErrorMessage> errorMessage = new GameMessage<>(MessageType.GAME_ERROR.getValue(), new ErrorMessage(ex.getLocalizedMessage()));
+      ex.printStackTrace();
+      GameMessage<ErrorMessage> errorMessage = new GameMessage<>(
+              MessageType.GAME_ERROR.getValue(), new ErrorMessage(ex.getLocalizedMessage()));
       String gameMessageJson = new Gson().toJson(errorMessage);
       session.sendMessage(new TextMessage(gameMessageJson.getBytes(StandardCharsets.UTF_8)));
       logger.info("Error: " + ex.getLocalizedMessage());
     }
   }
 
-  private void handleMoveAttemptEvent(WebSocketSession session, GameMessage<MoveAttemptMessage> gameMessage) throws Exception {
+  private void joinGame(WebSocketSession session, GameMessage<JoinGameMessage> joinMessage) {
+    // TODO
+  }
+
+  private void startNewGame(WebSocketSession session) throws Exception {
+    TicTacToe game = new TicTacToe();
+    game.addPlayer();
+    GameMessage<NewGameStartedMessage> gameStartedMessage =
+            new GameMessage<>(MessageType.NEW_GAME_STARTED.getValue(), new NewGameStartedMessage(game.getGameInfo()));
+    String gameMessageJson = new Gson().toJson(gameStartedMessage);
+    this.games.add(game);
+    session.sendMessage(new TextMessage(gameMessageJson));
+  }
+
+  private void sendAvailableGamesToSession(WebSocketSession session) throws Exception {
+    List<GameInfo> gameInfos = games.stream().map(TicTacToe::getGameInfo).toList();
+    AvailableGamesMessage availableGamesMessage = new AvailableGamesMessage(gameInfos);
+    GameMessage<AvailableGamesMessage> gameMessage = new GameMessage<>(MessageType.AVAILABLE_GAMES.getValue(), availableGamesMessage);
+    String gameMessageJson = new Gson().toJson(gameMessage);
+    session.sendMessage(new TextMessage(gameMessageJson.getBytes(StandardCharsets.UTF_8)));
+  }
+
+  private void handleMoveAttemptEvent(
+          WebSocketSession session, GameMessage<MoveAttemptMessage> gameMessage) throws Exception {
     Player player = playerSessions.get(session);
     logger.info("Received Move event from " + player.getId());
     MoveAttemptMessage event = gameMessage.data();
-    boolean isWinningMove = game.move(event.x(), event.y(), player);
+    //boolean isWinningMove = game.move(event.x(), event.y(), player);
 
     PlayerMoveMessage playerMoveEvent = new PlayerMoveMessage(event.x(), event.y(), player.getId(), player.getSymbol());
     GameMessage<PlayerMoveMessage> playerMoveMessage = new GameMessage<>(MessageType.PLAYER_MOVE.getValue(), playerMoveEvent);
@@ -57,7 +97,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
       s.sendMessage(new TextMessage(playerMoveMessageJson.getBytes(StandardCharsets.UTF_8)));
     }
 
-    if (isWinningMove) {
+    if (false) {
       logger.info("Winning move by the player " + player.getId());
       ResultMessage resultEvent = new ResultMessage("WIN", player.getId());
       GameMessage<ResultMessage> resultMessage = new GameMessage<>(MessageType.RESULT.getValue(), resultEvent);
@@ -71,14 +111,14 @@ public class WebSocketHandler extends TextWebSocketHandler {
   @Override
   public void afterConnectionEstablished(WebSocketSession session) throws Exception {
     try {
-      Player player = game.addPlayer();
-      playerSessions.put(session, player);
       GameMessage<AckMessage> gameMessage = new GameMessage<>(MessageType.ONLINE_ACK.getValue(), new AckMessage());
       String gameMessageJson = new Gson().toJson(gameMessage);
       session.sendMessage(new TextMessage(gameMessageJson.getBytes(StandardCharsets.UTF_8)));
-      logger.info("Added player " + player.getId() + ". Overall number of players: " + playerSessions.size());
+      logger.info("Added player " + "player.getId()" + ". Overall number of players: " + playerSessions.size());
     } catch (Exception ex) {
-      GameMessage<ErrorMessage> gameMessage = new GameMessage<>(MessageType.GAME_ERROR.getValue(), new ErrorMessage(ex.getLocalizedMessage()));
+      ex.printStackTrace();
+      GameMessage<ErrorMessage> gameMessage = new GameMessage<>(
+              MessageType.GAME_ERROR.getValue(), new ErrorMessage(ex.getLocalizedMessage()));
       String gameMessageJson = new Gson().toJson(gameMessage);
       session.sendMessage(new TextMessage(gameMessageJson.getBytes(StandardCharsets.UTF_8)));
       session.close();

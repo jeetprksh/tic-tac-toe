@@ -1,8 +1,8 @@
 package com.jeetprksh.game.tictactoe.game;
 
 public enum Symbol {
-  ZERO('0'),
-  CROSS('X');
+  O('O'),
+  X('X');
 
   private final char symbol;
 
