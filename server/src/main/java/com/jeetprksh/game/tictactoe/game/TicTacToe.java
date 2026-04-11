@@ -1,7 +1,7 @@
 package com.jeetprksh.game.tictactoe.game;
 
-import com.jeetprksh.game.tictactoe.message.GameInfo;
-import com.jeetprksh.game.tictactoe.message.PlayerInfo;
+import com.jeetprksh.game.tictactoe.pojo.GameInfo;
+import com.jeetprksh.game.tictactoe.pojo.PlayerInfo;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,7 +51,7 @@ public class TicTacToe {
 
   public Player addPlayer() throws Exception {
     if (players.size() < 2) {
-      Player player = new Player((new Random()).nextInt(1000), symbols.pop().getSymbol());
+      Player player = new Player((new Random()).nextInt(1000), this.id, symbols.pop().getSymbol());
       this.players.add(player);
       logger.info("Player added ");
       return player;
@@ -62,7 +62,7 @@ public class TicTacToe {
 
   public GameInfo getGameInfo() {
     return new GameInfo(this.id,
-            this.players.stream().map( p -> new PlayerInfo(p.getId(), p.getSymbol())).toList());
+            this.players.stream().map(p -> new PlayerInfo(p.getId(), p.getGameId(), p.getSymbol())).toList());
   }
 
 }

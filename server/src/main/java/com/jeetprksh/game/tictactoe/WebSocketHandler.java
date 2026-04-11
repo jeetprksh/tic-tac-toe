@@ -5,6 +5,7 @@ import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
 import com.jeetprksh.game.tictactoe.message.*;
 import com.jeetprksh.game.tictactoe.game.*;
+import com.jeetprksh.game.tictactoe.pojo.GameInfo;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
@@ -13,10 +14,7 @@ import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Logger;
 
 @Component
@@ -61,13 +59,31 @@ public class WebSocketHandler extends TextWebSocketHandler {
     }
   }
 
-  private void joinGame(WebSocketSession session, GameMessage<JoinGameMessage> joinMessage) {
-    // TODO
+  private void joinGame(WebSocketSession session, GameMessage<JoinGameMessage> joinMessage) throws Exception {
+    Optional<TicTacToe> gameOptional =
+            games.stream()
+                    .filter(game -> game.getGameInfo().gameId() == joinMessage.data().gameId())
+                    .findFirst();
+    if (gameOptional.isPresent()) {
+      TicTacToe ticTacToe = gameOptional.get();
+      Player player = ticTacToe.addPlayer();
+      playerSessions.put(session, player);
+      // TODO need to send the message to player already in game
+      GameMessage<GameJoinedMessage> gameJoinedMessage =
+              new GameMessage<>(MessageType.JOINED_GAME.getValue(), new GameJoinedMessage(ticTacToe.getGameInfo()));
+      String gameMessageJson = new Gson().toJson(gameJoinedMessage);
+      session.sendMessage(new TextMessage(gameMessageJson));
+    } else {
+      GameMessage<ErrorMessage> errorMessage = new GameMessage<>(MessageType.GAME_ERROR.getValue(), new ErrorMessage("Invalid game id"));
+      String gameMessageJson = new Gson().toJson(errorMessage);
+      session.sendMessage(new TextMessage(gameMessageJson));
+    }
   }
 
   private void startNewGame(WebSocketSession session) throws Exception {
     TicTacToe game = new TicTacToe();
-    game.addPlayer();
+    Player player = game.addPlayer();
+    playerSessions.put(session, player);
     GameMessage<NewGameStartedMessage> gameStartedMessage =
             new GameMessage<>(MessageType.NEW_GAME_STARTED.getValue(), new NewGameStartedMessage(game.getGameInfo()));
     String gameMessageJson = new Gson().toJson(gameStartedMessage);

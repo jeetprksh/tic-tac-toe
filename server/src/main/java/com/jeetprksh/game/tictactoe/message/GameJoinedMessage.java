@@ -2,5 +2,4 @@ package com.jeetprksh.game.tictactoe.message;
 
 import com.jeetprksh.game.tictactoe.pojo.GameInfo;
 
-public record NewGameStartedMessage(GameInfo gameInfo) implements Message {
-}
+public record GameJoinedMessage(GameInfo gameInfo) implements Message { }

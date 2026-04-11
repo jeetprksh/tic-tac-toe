@@ -1,4 +1,4 @@
-package com.jeetprksh.game.tictactoe.message;
+package com.jeetprksh.game.tictactoe.pojo;
 
 import java.util.List;
 
