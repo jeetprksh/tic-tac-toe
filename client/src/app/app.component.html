@@ -23,10 +23,45 @@
   </div>
 </div>
 
-<div *ngIf="showBoard" class="board-grid" role="grid" aria-label="Tic tac toe board">
-  <ng-container *ngFor="let row of board; let i = index">
-    <ng-container *ngFor="let col of row; let j = index">
-      <div class="board-cell" role="gridcell" (click)="move(i,j)">{{ board[i][j] }}</div>
-    </ng-container>
-  </ng-container>
+<div *ngIf="showBoard" class="board-page">
+  <div class="board-header"></div>
+  <div class="board-screen">
+    <div class="player-info-card current-player">
+      <h5>You</h5>
+      <div class="player-info-row">
+        <span class="player-info-value">{{ playerId || '-' }}</span>
+      </div>
+      <div class="player-info-row">
+        <span class="player-info-value">{{ symbol || '-' }}</span>
+      </div>
+      <div class="player-info-row" *ngIf="gameId">
+        <span class="player-info-value">{{ gameId }}</span>
+      </div>
+    </div>
+
+    <div class="board-grid" role="grid" aria-label="Tic tac toe board">
+      <ng-container *ngFor="let row of board; let i = index">
+        <ng-container *ngFor="let col of row; let j = index">
+          <div class="board-cell" role="gridcell" (click)="move(i,j)">{{ board[i][j] }}</div>
+        </ng-container>
+      </ng-container>
+    </div>
+
+    <div class="player-info-card opponent-player">
+      <h5>Opponent</h5>
+      <div class="player-info-row">
+        <span class="player-info-value">{{ playerId || '-' }}</span>
+      </div>
+      <div class="player-info-row">
+        <span class="player-info-value">{{ symbol || '-' }}</span>
+      </div>
+      <div class="player-info-row" *ngIf="gameId">
+        <span class="player-info-value">{{ gameId }}</span>
+      </div>
+    </div>
+  </div>
+  <div class="board-footer">
+    <button class="footer-button leave-button">Leave</button>
+    <button class="footer-button restart-button">Restart</button>
+  </div>
 </div>
