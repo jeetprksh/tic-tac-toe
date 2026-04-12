@@ -2,86 +2,47 @@ package com.jeetprksh.game.tictactoe.game;
 
 import java.util.Objects;
 
-class WinDecider {
-
-  private final int[][] magicSquare = {{8,1,6},{3,5,7},{4,9,2}};
+public class WinDecider {
   private final Cell[][] board;
 
-  WinDecider(Cell[][] board) {
+  public WinDecider(Cell[][] board) {
     this.board = board;
   }
 
-  public boolean isWiningMove(Player player) {
-    return checkRows(player) || checkColumns(player) || checkDiagonal(player) || checkAntiDiagonal(player);
+  public boolean isWiningMove(int row, int col, Symbol symbol) {
+    return (checkRow(row, symbol) ||
+            checkColumn(col, symbol) ||
+            checkDiagonals(row, col, symbol));
   }
 
-  private boolean checkRows(Player player) {
-    int sum = 0;
-    boolean isWiningMove = false;
-    for (int i = 0; i <= 2; i++) {
-      for (int j = 0; j <= 2; j++) {
-        if (Objects.nonNull(board[i][j]) && (board[i][j]).player.getId() == player.getId()) {
-          sum = sum + magicSquare[i][j];
-        }
-        if (sum == 15) {
-          isWiningMove = true;
-          break;
-        }
-        sum = 0;
-      }
-      if (isWiningMove) {
-        break;
-      }
+  private boolean checkRow(int row, Symbol s) {
+    for (int i = 0; i < 3; i++) {
+      if (board[row][i].getPlayer().getSymbol() != s) return false;
     }
-    return isWiningMove;
+    return true;
   }
 
-  private boolean checkColumns(Player player) {
-    int sum = 0;
-    boolean isWiningMove = false;
-    for (int i = 0; i <= 2; i++) {
-      for (int j = 0; j <= 2; j++) {
-        if (Objects.nonNull(board[j][i]) && (board[j][i]).player.getId() == player.getId()) {
-          sum = sum + magicSquare[j][i];
-        }
-        if (sum == 15) {
-          isWiningMove = true;
-          break;
-        }
-        sum = 0;
-      }
-      if (isWiningMove) {
-        break;
-      }
+  private boolean checkColumn(int col, Symbol s) {
+    for (int i = 0; i < 3; i++) {
+      if (board[i][col].getPlayer().getSymbol() != s) return false;
     }
-    return isWiningMove;
+    return true;
   }
 
-  private boolean checkDiagonal(Player player) {
-    int sum = 0;
-    if (Objects.nonNull(board[0][0]) && (board[0][0]).player.getId() == player.getId()) {
-      sum = sum + magicSquare[0][0];
+  private boolean checkDiagonals(int row, int col, Symbol s) {
+    boolean win = false;
+    // Main diagonal (top-left to bottom-right)
+    if (row == col) {
+      win = (board[0][0].getPlayer().getSymbol() == s &&
+              board[1][1].getPlayer().getSymbol() == s &&
+              board[2][2].getPlayer().getSymbol() == s);
     }
-    if (Objects.nonNull(board[1][1]) && (board[1][1]).player.getId() == player.getId()) {
-      sum = sum + magicSquare[1][1];
+    // Anti-diagonal (top-right to bottom-left)
+    if (!win && row + col == 2) {
+      win = (board[0][2].getPlayer().getSymbol() == s &&
+              board[1][1].getPlayer().getSymbol() == s &&
+              board[2][0].getPlayer().getSymbol() == s);
     }
-    if (Objects.nonNull(board[2][2]) && (board[2][2]).player.getId() == player.getId()) {
-      sum = sum + magicSquare[2][2];
-    }
-    return sum == 15;
-  }
-
-  private boolean checkAntiDiagonal(Player player) {
-    int sum = 0;
-    if (Objects.nonNull(board[0][2]) && (board[0][2]).player.getId() == player.getId()) {
-      sum = sum + magicSquare[0][2];
-    }
-    if (Objects.nonNull(board[1][1]) && (board[1][1]).player.getId() == player.getId()) {
-      sum = sum + magicSquare[1][1];
-    }
-    if (Objects.nonNull(board[2][0]) && (board[2][0]).player.getId() == player.getId()) {
-      sum = sum + magicSquare[2][0];
-    }
-    return sum == 15;
+    return win;
   }
 }

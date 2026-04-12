@@ -1,4 +1,6 @@
 package com.jeetprksh.game.tictactoe.message;
 
-public record PlayerMoveMessage(int x, int y, int playerId, char playerSymbol) implements Message {
+import com.jeetprksh.game.tictactoe.game.Symbol;
+
+public record PlayerMoveMessage(int x, int y, int playerId, Symbol playerSymbol) implements Message {
 }

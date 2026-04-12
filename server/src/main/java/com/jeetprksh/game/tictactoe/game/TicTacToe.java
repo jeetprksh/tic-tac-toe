@@ -13,9 +13,7 @@ public class TicTacToe {
   private final int id = (new Random()).nextInt(100);
   private final Cell[][] board = new Cell[3][3];
   private final List<Player> players = new ArrayList<>();
-  //private final Stack<Symbol> symbols = new Stack<>();
   private final WinDecider winDecider = new WinDecider(board);
-
 
   public TicTacToe() {
     logger.info("Initializing new game");
@@ -26,7 +24,7 @@ public class TicTacToe {
     if (board[x][y] == null) {
       Cell cell = new Cell(player);
       board[x][y] = cell;
-      return winDecider.isWiningMove(player);
+      return winDecider.isWiningMove(x, y, player.getSymbol());
     } else {
       throw new Exception("Wrong Move");
     }
@@ -43,23 +41,17 @@ public class TicTacToe {
   }
 
   public void addPlayer(Player player) throws Exception {
-    if (players.size() < 2) {
-      Optional<Player> playerOptional = players.stream().findFirst();
-      // TODO simplify this code
-      if (playerOptional.isPresent()) {
-        Symbol symbol = Symbol.valueOf(String.valueOf(playerOptional.get().getSymbol()));
-        if (symbol.equals(Symbol.X)) {
-          player.setSymbol('O');
-        } else {
-          player.setSymbol('X');
-        }
-      }
-      player.setGameId(this.id);
-      this.players.add(player);
-      logger.info("Player added");
-    } else {
+    if (players.size() >= 2) {
       throw new Exception("Maximum allowed players have entered the game.");
     }
+
+    // Determine symbol: if first player exists, use their next; otherwise default to X
+    Symbol assignedSymbol = players.isEmpty() ? Symbol.X : players.get(0).getSymbol().next();
+
+    player.setSymbol(assignedSymbol);
+    player.setGameId(this.id);
+    this.players.add(player);
+    logger.info("Player added");
   }
 
   public GameInfo getGameInfo() {

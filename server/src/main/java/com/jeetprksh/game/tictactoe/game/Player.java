@@ -5,16 +5,10 @@ import java.util.Random;
 public class Player {
 
   private int id;
-  private char symbol;
+  private Symbol symbol;
   private int gameId;
 
-  public Player(int id, int gameId, char symbol) {
-    this.id = id;
-    this.gameId = gameId;
-    this.symbol = symbol;
-  }
-
-  private Player(int id, char symbol) {
+  private Player(int id, Symbol symbol) {
     this.id = id;
     this.symbol = symbol;
   }
@@ -35,15 +29,15 @@ public class Player {
     this.gameId = gameId;
   }
 
-  public char getSymbol() {
+  public Symbol getSymbol() {
     return symbol;
   }
 
-  public void setSymbol(char symbol) {
+  public void setSymbol(Symbol symbol) {
     this.symbol = symbol;
   }
 
   public static Player createNonGamePlayer() {
-    return new Player((new Random()).nextInt(1000), Symbol.X.getSymbol());
+    return new Player((new Random()).nextInt(1000), Symbol.X);
   }
 }

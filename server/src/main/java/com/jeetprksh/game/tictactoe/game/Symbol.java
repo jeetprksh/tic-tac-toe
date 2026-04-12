@@ -13,4 +13,8 @@ public enum Symbol {
   public char getSymbol() {
     return symbol;
   }
+
+  public Symbol next() {
+    return this == X ? O : X;
+  }
 }
