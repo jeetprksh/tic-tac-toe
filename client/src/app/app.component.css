@@ -42,18 +42,13 @@
 }
 
 .start-button {
-  padding: 15px 30px;
-  font-size: 18px;
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  border-radius: 5px;
+  padding: 5px 15px;
+  font-size: 16px;
+  background-color: white;
+  color: #666;
+  border: 1px solid #666;
+  border-radius: 6px;
   cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.start-button:hover {
-  background-color: #45a049;
 }
 
 .main-container {
@@ -94,6 +89,7 @@
   color: #666;
   transition: color 0.2s ease, transform 0.2s ease;
   user-select: none;
+  padding-top: 3px;
 }
 
 .refresh-icon:hover {
@@ -116,13 +112,11 @@
   justify-content: space-between;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   border: none;
 }
 
 .game-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 .board-screen {
@@ -169,7 +163,7 @@
   padding: 10px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 3px;
   border: #666 solid 1px;
   align-items: center;
 }

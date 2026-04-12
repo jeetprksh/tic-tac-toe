@@ -29,13 +29,13 @@
     <div class="player-info-card current-player">
       <h5>You</h5>
       <div class="player-info-row">
-        <span class="player-info-value">{{ playerId || '-' }}</span>
+        <span class="player-info-value">P#{{ playerId || '-' }}</span>
       </div>
       <div class="player-info-row">
         <span class="player-info-value">{{ symbol || '-' }}</span>
       </div>
       <div class="player-info-row" *ngIf="gameId">
-        <span class="player-info-value">{{ gameId }}</span>
+        <span class="player-info-value">G#{{ gameId }}</span>
       </div>
     </div>
 
@@ -50,13 +50,13 @@
     <div class="player-info-card opponent-player">
       <h5>Opponent</h5>
       <div class="player-info-row">
-        <span class="player-info-value">{{ playerId || '-' }}</span>
+        <span class="player-info-value">P#{{ opponentId || '-' }}</span>
       </div>
       <div class="player-info-row">
-        <span class="player-info-value">{{ symbol || '-' }}</span>
+        <span class="player-info-value">{{ opponentSymbol || '-' }}</span>
       </div>
       <div class="player-info-row" *ngIf="gameId">
-        <span class="player-info-value">{{ gameId }}</span>
+        <span class="player-info-value">G#{{ gameId }}</span>
       </div>
     </div>
   </div>

@@ -21,6 +21,8 @@ export class AppComponent {
   board: string[][] = [];
   playerId: string = '';
   symbol: string = '';
+  opponentId: string = '';
+  opponentSymbol: string = '';
   gameId: number = 0;
   showBoard: boolean = false;
   showAvailableGames: boolean = false;
@@ -99,6 +101,15 @@ export class AppComponent {
       if (message.messageType === 'ONLINE_ACK') {
         console.log('Received ONLINE_ACK:', message.data);
         this.sendNewPlayerMessage(); 
+      } else if (message.messageType === 'NEW_PLAYER_CREATED') {
+        console.log('Received NEW_PLAYER_CREATED:', message.data);
+        const d: any = message.data;
+        if (d.playerInfo) {
+          this.playerId = String(d.playerInfo.playerId);
+          this.gameId = d.playerInfo.gameId;
+          this.symbol = d.playerInfo.symbol;
+          sessionStorage.setItem('playerInfo', JSON.stringify(d.playerInfo));
+        }
       } else if (message.messageType === 'AVAILABLE_GAMES') {
         console.log('Received AVAILABLE_GAMES:', message.data);
         const d: any = message.data;
@@ -110,13 +121,55 @@ export class AppComponent {
         console.log('Received NEW_GAME_STARTED:', message.data);
         const d: any = message.data;
         if (d.gameInfo) {
-          this.gameId = d.gameInfo.id;
+          this.gameId = d.gameInfo.gameId;
           if (d.gameInfo.players && d.gameInfo.players.length > 0) {
-            const firstPlayer = d.gameInfo.players[0];
-            this.playerId = String(firstPlayer.id);
-            this.symbol = firstPlayer.symbol;
+            // Find current player and opponent by matching stored playerId
+            const currentPlayerId = parseInt(this.playerId);
+            const currentPlayer = d.gameInfo.players.find((p: any) => p.playerId === currentPlayerId);
+            const opponent = d.gameInfo.players.find((p: any) => p.playerId !== currentPlayerId);
+            
+            if (currentPlayer) {
+              this.symbol = currentPlayer.symbol;
+            }
+            if (opponent) {
+              this.opponentId = String(opponent.playerId);
+              this.opponentSymbol = opponent.symbol;
+            }
           }
           this.showBoard = true;
+          // Update session storage with new gameId
+          const storedPlayerInfo = JSON.parse(sessionStorage.getItem('playerInfo') || '{}');
+          storedPlayerInfo.gameId = this.gameId;
+          sessionStorage.setItem('playerInfo', JSON.stringify(storedPlayerInfo));
+        }
+      } else if (message.messageType === 'JOINED_GAME') {
+        console.log('Received JOINED_GAME:', message.data);
+        const d: any = message.data;
+        if (d.gameInfo) {
+          this.gameId = d.gameInfo.gameId;
+          if (d.gameInfo.players && d.gameInfo.players.length > 0) {
+            // Get stored player info to identify current player
+            const storedPlayerInfo = JSON.parse(sessionStorage.getItem('playerInfo') || '{}');
+            const currentPlayerId = storedPlayerInfo.playerId;
+            
+            // Find current player and opponent
+            const currentPlayer = d.gameInfo.players.find((p: any) => p.playerId === currentPlayerId);
+            const opponent = d.gameInfo.players.find((p: any) => p.playerId !== currentPlayerId);
+            
+            if (currentPlayer) {
+              this.playerId = String(currentPlayer.playerId);
+              this.symbol = currentPlayer.symbol;
+            }
+            if (opponent) {
+              this.opponentId = String(opponent.playerId);
+              this.opponentSymbol = opponent.symbol;
+            }
+          }
+          this.showBoard = true;
+          // Update session storage with new gameId
+          const storedPlayerInfo = JSON.parse(sessionStorage.getItem('playerInfo') || '{}');
+          storedPlayerInfo.gameId = this.gameId;
+          sessionStorage.setItem('playerInfo', JSON.stringify(storedPlayerInfo));
         }
       } else if (message.messageType === 'PLAYER_MOVE') {
         const d: any = message.data;
