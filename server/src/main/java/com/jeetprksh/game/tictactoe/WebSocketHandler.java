@@ -6,6 +6,7 @@ import com.google.gson.reflect.TypeToken;
 import com.jeetprksh.game.tictactoe.message.*;
 import com.jeetprksh.game.tictactoe.game.*;
 import com.jeetprksh.game.tictactoe.pojo.GameInfo;
+import com.jeetprksh.game.tictactoe.pojo.PlayerInfo;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
@@ -39,6 +40,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
       }
       if (messageType.equals(MessageType.NEW_PLAYER.getValue())
               || messageType.equals(MessageType.LIST_GAMES.getValue())) {
+        createPlayer(session);
         sendAvailableGamesToSession(session);
       }
       if (messageType.equals(MessageType.START_NEW.getValue())) {
@@ -59,6 +61,16 @@ public class WebSocketHandler extends TextWebSocketHandler {
     }
   }
 
+  private void createPlayer(WebSocketSession session) throws IOException {
+    Player player = Player.createNonGamePlayer();
+    playerSessions.put(session, player);
+    PlayerInfo playerInfo = new PlayerInfo(player.getId(), player.getGameId(), player.getSymbol());
+    GameMessage<PlayerInfoMessage> playerInfoMessage =
+            new GameMessage<>(MessageType.NEW_PLAYER_CREATED.getValue(), new PlayerInfoMessage(playerInfo));
+    String gameMessageJson = new Gson().toJson(playerInfoMessage);
+    session.sendMessage(new TextMessage(gameMessageJson.getBytes(StandardCharsets.UTF_8)));
+  }
+
   private void joinGame(WebSocketSession session, GameMessage<JoinGameMessage> joinMessage) throws Exception {
     Optional<TicTacToe> gameOptional =
             games.stream()
@@ -66,8 +78,8 @@ public class WebSocketHandler extends TextWebSocketHandler {
                     .findFirst();
     if (gameOptional.isPresent()) {
       TicTacToe ticTacToe = gameOptional.get();
-      Player player = ticTacToe.addPlayer();
-      playerSessions.put(session, player);
+      Player player = playerSessions.get(session);
+      ticTacToe.addPlayer(player);
       // TODO need to send the message to player already in game
       GameMessage<GameJoinedMessage> gameJoinedMessage =
               new GameMessage<>(MessageType.JOINED_GAME.getValue(), new GameJoinedMessage(ticTacToe.getGameInfo()));
@@ -82,8 +94,8 @@ public class WebSocketHandler extends TextWebSocketHandler {
 
   private void startNewGame(WebSocketSession session) throws Exception {
     TicTacToe game = new TicTacToe();
-    Player player = game.addPlayer();
-    playerSessions.put(session, player);
+    Player player = playerSessions.get(session);
+    game.addPlayer(player);
     GameMessage<NewGameStartedMessage> gameStartedMessage =
             new GameMessage<>(MessageType.NEW_GAME_STARTED.getValue(), new NewGameStartedMessage(game.getGameInfo()));
     String gameMessageJson = new Gson().toJson(gameStartedMessage);
