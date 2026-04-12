@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { Message } from '../data/Message';
+import { Message, OnlineAckData, NewPlayerCreatedData, AvailableGamesData, NewGameStartedData, JoinedGameData, PlayerMoveData, GameErrorData } from '../data/Message';
 
 
 const WEBSOCKET_URL = (() => {
@@ -98,98 +98,131 @@ export class AppComponent {
     this.websocket.onmessage = (event: MessageEvent) => {
       const message: Message = JSON.parse(event.data);
 
-      if (message.messageType === 'ONLINE_ACK') {
-        console.log('Received ONLINE_ACK:', message.data);
-        this.sendNewPlayerMessage(); 
-      } else if (message.messageType === 'NEW_PLAYER_CREATED') {
-        console.log('Received NEW_PLAYER_CREATED:', message.data);
-        const d: any = message.data;
-        if (d.playerInfo) {
-          this.playerId = String(d.playerInfo.playerId);
-          this.gameId = d.playerInfo.gameId;
-          this.symbol = d.playerInfo.symbol;
-          sessionStorage.setItem('playerInfo', JSON.stringify(d.playerInfo));
-        }
-      } else if (message.messageType === 'AVAILABLE_GAMES') {
-        console.log('Received AVAILABLE_GAMES:', message.data);
-        const d: any = message.data;
-        if (d.availableGames) {
-          this.availableGames = d.availableGames;
-          this.showAvailableGames = true;
-        }
-      } else if (message.messageType === 'NEW_GAME_STARTED') {
-        console.log('Received NEW_GAME_STARTED:', message.data);
-        const d: any = message.data;
-        if (d.gameInfo) {
-          this.gameId = d.gameInfo.gameId;
-          if (d.gameInfo.players && d.gameInfo.players.length > 0) {
-            // Find current player and opponent by matching stored playerId
-            const currentPlayerId = parseInt(this.playerId);
-            const currentPlayer = d.gameInfo.players.find((p: any) => p.playerId === currentPlayerId);
-            const opponent = d.gameInfo.players.find((p: any) => p.playerId !== currentPlayerId);
-            
-            if (currentPlayer) {
-              this.symbol = currentPlayer.symbol;
-            }
-            if (opponent) {
-              this.opponentId = String(opponent.playerId);
-              this.opponentSymbol = opponent.symbol;
-            }
-          }
-          this.showBoard = true;
-          // Update session storage with new gameId
-          const storedPlayerInfo = JSON.parse(sessionStorage.getItem('playerInfo') || '{}');
-          storedPlayerInfo.gameId = this.gameId;
-          sessionStorage.setItem('playerInfo', JSON.stringify(storedPlayerInfo));
-        }
-      } else if (message.messageType === 'JOINED_GAME') {
-        console.log('Received JOINED_GAME:', message.data);
-        const d: any = message.data;
-        if (d.gameInfo) {
-          this.gameId = d.gameInfo.gameId;
-          if (d.gameInfo.players && d.gameInfo.players.length > 0) {
-            // Get stored player info to identify current player
-            const storedPlayerInfo = JSON.parse(sessionStorage.getItem('playerInfo') || '{}');
-            const currentPlayerId = storedPlayerInfo.playerId;
-            
-            // Find current player and opponent
-            const currentPlayer = d.gameInfo.players.find((p: any) => p.playerId === currentPlayerId);
-            const opponent = d.gameInfo.players.find((p: any) => p.playerId !== currentPlayerId);
-            
-            if (currentPlayer) {
-              this.playerId = String(currentPlayer.playerId);
-              this.symbol = currentPlayer.symbol;
-            }
-            if (opponent) {
-              this.opponentId = String(opponent.playerId);
-              this.opponentSymbol = opponent.symbol;
-            }
-          }
-          this.showBoard = true;
-          // Update session storage with new gameId
-          const storedPlayerInfo = JSON.parse(sessionStorage.getItem('playerInfo') || '{}');
-          storedPlayerInfo.gameId = this.gameId;
-          sessionStorage.setItem('playerInfo', JSON.stringify(storedPlayerInfo));
-        }
-      } else if (message.messageType === 'PLAYER_MOVE') {
-        const d: any = message.data;
-        const x = Number(d.x);
-        const y = Number(d.y);
-        const symbol = d.playerSymbol ?? d.symbol ?? 'X';
-        this.board[x][y] = symbol;
-      } else if (message.messageType === 'GAME_ERROR') {
-        // show message in toast
-        let errMsg = 'Unknown error';
-        if (typeof message.data === 'object' && message.data !== null && 'message' in message.data) {
-          errMsg = String((message.data as any).message);
-        } else if (typeof message.data === 'string') {
-          errMsg = message.data;
-        } else {
-          try { errMsg = JSON.stringify(message.data); } catch (e) { /* keep fallback */ }
-        }
-        this.toast(errMsg);
+      switch (message.messageType) {
+        case 'ONLINE_ACK':
+          this.handleOnlineAck(message.data as OnlineAckData);
+          break;
+        case 'NEW_PLAYER_CREATED':
+          this.handleNewPlayerCreated(message.data as NewPlayerCreatedData);
+          break;
+        case 'AVAILABLE_GAMES':
+          this.handleAvailableGames(message.data as AvailableGamesData);
+          break;
+        case 'NEW_GAME_STARTED':
+          this.handleNewGameStarted(message.data as NewGameStartedData);
+          break;
+        case 'JOINED_GAME':
+          this.handleJoinedGame(message.data as JoinedGameData);
+          break;
+        case 'PLAYER_MOVE':
+          this.handlePlayerMove(message.data as PlayerMoveData);
+          break;
+        case 'GAME_ERROR':
+          this.handleGameError(message.data as GameErrorData);
+          break;
+        default:
+          console.log('Unknown message type:', message.messageType);
       }
     };
+  }
+
+  private handleOnlineAck(data: OnlineAckData) {
+    console.log('Received ONLINE_ACK:', data);
+    this.sendNewPlayerMessage();
+  }
+
+  private handleNewPlayerCreated(data: NewPlayerCreatedData) {
+    console.log('Received NEW_PLAYER_CREATED:', data);
+    if (data.playerInfo) {
+      this.playerId = String(data.playerInfo.playerId);
+      this.gameId = data.playerInfo.gameId;
+      this.symbol = data.playerInfo.symbol;
+      sessionStorage.setItem('playerInfo', JSON.stringify(data.playerInfo));
+    }
+  }
+
+  private handleAvailableGames(data: AvailableGamesData) {
+    console.log('Received AVAILABLE_GAMES:', data);
+    if (data.availableGames) {
+      this.availableGames = data.availableGames;
+      this.showAvailableGames = true;
+    }
+  }
+
+  private handleNewGameStarted(data: NewGameStartedData) {
+    console.log('Received NEW_GAME_STARTED:', data);
+    if (data.gameInfo) {
+      this.gameId = data.gameInfo.gameId;
+      if (data.gameInfo.players && data.gameInfo.players.length > 0) {
+        // Find current player and opponent by matching stored playerId
+        const currentPlayerId = parseInt(this.playerId);
+        const currentPlayer = data.gameInfo.players.find((p: any) => p.playerId === currentPlayerId);
+        const opponent = data.gameInfo.players.find((p: any) => p.playerId !== currentPlayerId);
+        
+        if (currentPlayer) {
+          this.symbol = currentPlayer.symbol;
+        }
+        if (opponent) {
+          this.opponentId = String(opponent.playerId);
+          this.opponentSymbol = opponent.symbol;
+        }
+      }
+      this.showBoard = true;
+      // Update session storage with new gameId
+      const storedPlayerInfo = JSON.parse(sessionStorage.getItem('playerInfo') || '{}');
+      storedPlayerInfo.gameId = this.gameId;
+      sessionStorage.setItem('playerInfo', JSON.stringify(storedPlayerInfo));
+    }
+  }
+
+  private handleJoinedGame(data: JoinedGameData) {
+    console.log('Received JOINED_GAME:', data);
+    if (data.gameInfo) {
+      this.gameId = data.gameInfo.gameId;
+      if (data.gameInfo.players && data.gameInfo.players.length > 0) {
+        // Get stored player info to identify current player
+        const storedPlayerInfo = JSON.parse(sessionStorage.getItem('playerInfo') || '{}');
+        const currentPlayerId = storedPlayerInfo.playerId;
+        
+        // Find current player and opponent
+        const currentPlayer = data.gameInfo.players.find((p: any) => p.playerId === currentPlayerId);
+        const opponent = data.gameInfo.players.find((p: any) => p.playerId !== currentPlayerId);
+        
+        if (currentPlayer) {
+          this.playerId = String(currentPlayer.playerId);
+          this.symbol = currentPlayer.symbol;
+        }
+        if (opponent) {
+          this.opponentId = String(opponent.playerId);
+          this.opponentSymbol = opponent.symbol;
+        }
+      }
+      this.showBoard = true;
+      // Update session storage with new gameId
+      const storedPlayerInfo = JSON.parse(sessionStorage.getItem('playerInfo') || '{}');
+      storedPlayerInfo.gameId = this.gameId;
+      sessionStorage.setItem('playerInfo', JSON.stringify(storedPlayerInfo));
+    }
+  }
+
+  private handlePlayerMove(data: PlayerMoveData) {
+    const x = Number(data.x);
+    const y = Number(data.y);
+    const symbol = data.playerSymbol;
+    this.board[x][y] = symbol;
+  }
+
+  private handleGameError(data: GameErrorData) {
+    // show message in toast
+    let errMsg = 'Unknown error';
+    if (typeof data === 'object' && data !== null && 'message' in data) {
+      errMsg = String((data as any).message);
+    } else if (typeof data === 'string') {
+      errMsg = data;
+    } else {
+      try { errMsg = JSON.stringify(data); } catch (e) { /* keep fallback */ }
+    }
+    this.toast(errMsg);
   }
 
   getGameCardBackground(gameId: number): string {
