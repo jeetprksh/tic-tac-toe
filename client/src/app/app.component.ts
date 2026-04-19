@@ -19,7 +19,7 @@ export class AppComponent {
 
   websocket = new WebSocket(WEBSOCKET_URL);
   board: string[][] = [];
-  playerId: string = '';
+  playerId: number = 0;
   symbol: string = '';
   opponentId: string = '';
   opponentSymbol: string = '';
@@ -54,7 +54,7 @@ export class AppComponent {
     console.log(i + " " + j);
     const message: Message = {
       messageType: 'MOVE_ATTEMPT',
-      data: { x: i, y: j }
+      data: { x: i, y: j, playerId: this.playerId, gameId: this.gameId }
     };
     this.websocket.send(JSON.stringify(message));
   }
@@ -62,7 +62,7 @@ export class AppComponent {
   startGame() {
     const message: Message = {
       messageType: 'START_NEW',
-      data: '' // Empty string for start new game data
+      data: { playerId: this.playerId }
     };
     this.websocket.send(JSON.stringify(message));
   }
@@ -70,7 +70,7 @@ export class AppComponent {
   joinGame(gameId: number) {
     const message: Message = {
       messageType: 'JOIN_GAME',
-      data: { gameId: gameId }
+      data: { gameId: gameId, playerId: this.playerId }
     };
     this.websocket.send(JSON.stringify(message));
     this.showBoard = true;
@@ -134,7 +134,7 @@ export class AppComponent {
   private handleNewPlayerCreated(data: NewPlayerCreatedData) {
     console.log('Received NEW_PLAYER_CREATED:', data);
     if (data.playerInfo) {
-      this.playerId = String(data.playerInfo.playerId);
+      this.playerId = data.playerInfo.playerId;
       this.gameId = data.playerInfo.gameId;
       this.symbol = data.playerInfo.symbol;
       sessionStorage.setItem('playerInfo', JSON.stringify(data.playerInfo));
@@ -155,7 +155,7 @@ export class AppComponent {
       this.gameId = data.gameInfo.gameId;
       if (data.gameInfo.players && data.gameInfo.players.length > 0) {
         // Find current player and opponent by matching stored playerId
-        const currentPlayerId = parseInt(this.playerId);
+        const currentPlayerId = this.playerId;
         const currentPlayer = data.gameInfo.players.find((p: any) => p.playerId === currentPlayerId);
         const opponent = data.gameInfo.players.find((p: any) => p.playerId !== currentPlayerId);
         
@@ -189,7 +189,7 @@ export class AppComponent {
         const opponent = data.gameInfo.players.find((p: any) => p.playerId !== currentPlayerId);
         
         if (currentPlayer) {
-          this.playerId = String(currentPlayer.playerId);
+          this.playerId = currentPlayer.playerId;
           this.symbol = currentPlayer.symbol;
         }
         if (opponent) {
