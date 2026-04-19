@@ -1,7 +1,5 @@
 package com.jeetprksh.game.tictactoe.game;
 
-import java.util.Objects;
-
 public class WinDecider {
   private final Cell[][] board;
 
@@ -17,32 +15,44 @@ public class WinDecider {
 
   private boolean checkRow(int row, Symbol s) {
     for (int i = 0; i < 3; i++) {
-      if (board[row][i].getPlayer().getSymbol() != s) return false;
+      if (isNotMatching(row, i, s)) return false;
     }
     return true;
   }
 
   private boolean checkColumn(int col, Symbol s) {
     for (int i = 0; i < 3; i++) {
-      if (board[i][col].getPlayer().getSymbol() != s) return false;
+      if (isNotMatching(i, col, s)) return false;
     }
     return true;
   }
 
   private boolean checkDiagonals(int row, int col, Symbol s) {
     boolean win = false;
-    // Main diagonal (top-left to bottom-right)
+
+    // Main diagonal (0,0), (1,1), (2,2)
     if (row == col) {
-      win = (board[0][0].getPlayer().getSymbol() == s &&
-              board[1][1].getPlayer().getSymbol() == s &&
-              board[2][2].getPlayer().getSymbol() == s);
+      win = (!isNotMatching(0, 0, s) &&
+              !isNotMatching(1, 1, s) &&
+              !isNotMatching(2, 2, s));
     }
-    // Anti-diagonal (top-right to bottom-left)
+
+    // Anti-diagonal (0,2), (1,1), (2,0)
     if (!win && row + col == 2) {
-      win = (board[0][2].getPlayer().getSymbol() == s &&
-              board[1][1].getPlayer().getSymbol() == s &&
-              board[2][0].getPlayer().getSymbol() == s);
+      win = (!isNotMatching(0, 2, s) &&
+              !isNotMatching(1, 1, s) &&
+              !isNotMatching(2, 0, s));
     }
     return win;
+  }
+
+  /**
+   * Helper method to safely check if a cell matches the symbol.
+   * Returns true if the cell is null, has no player, or has a different symbol.
+   */
+  private boolean isNotMatching(int r, int c, Symbol s) {
+    return board[r][c] == null ||
+            board[r][c].getPlayer() == null ||
+            board[r][c].getPlayer().getSymbol() != s;
   }
 }
