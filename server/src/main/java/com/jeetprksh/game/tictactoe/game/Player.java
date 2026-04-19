@@ -1,5 +1,6 @@
 package com.jeetprksh.game.tictactoe.game;
 
+import java.util.Objects;
 import java.util.Random;
 
 public class Player {
@@ -35,6 +36,18 @@ public class Player {
 
   public void setSymbol(Symbol symbol) {
     this.symbol = symbol;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof Player player)) return false;
+    return id == player.id;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(id);
   }
 
   public static Player createNonGamePlayer() {
