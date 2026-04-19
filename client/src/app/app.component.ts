@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { Message, OnlineAckData, NewPlayerCreatedData, AvailableGamesData, NewGameStartedData, JoinedGameData, PlayerMoveData, GameErrorData, ResultData } from '../data/Message';
+import { Message, OnlineAckData, NewPlayerCreatedData, AvailableGamesData, NewGameStartedData, JoinedGameData, PlayerMoveData, GameErrorData, ResultData, GameRestartedData } from '../data/Message';
 
 
 const WEBSOCKET_URL = (() => {
@@ -127,6 +127,9 @@ export class AppComponent {
           break;
         case 'RESULT':
           this.handleResult(message.data as ResultData);
+          break;
+        case 'GAME_RESTARTED':
+          this.handleGameRestarted(message.data as GameRestartedData);
           break;
         default:
           console.log('Unknown message type:', message.messageType);
@@ -256,6 +259,15 @@ export class AppComponent {
   }
 
   restartGame() {
+    const message: Message = {
+      messageType: 'RESTART_GAME',
+      data: { gameId: this.gameId, playerId: this.playerId }
+    };
+    this.websocket.send(JSON.stringify(message));
+  }
+
+  private handleGameRestarted(data: GameRestartedData) {
+    console.log('Received GAME_RESTARTED:', data);
     this.gameEnded = false;
     this.winningPlayerId = null;
     this.initializeBoard();
