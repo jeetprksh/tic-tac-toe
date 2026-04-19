@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { Message, OnlineAckData, NewPlayerCreatedData, AvailableGamesData, NewGameStartedData, JoinedGameData, PlayerMoveData, GameErrorData } from '../data/Message';
+import { Message, OnlineAckData, NewPlayerCreatedData, AvailableGamesData, NewGameStartedData, JoinedGameData, PlayerMoveData, GameErrorData, ResultData } from '../data/Message';
 
 
 const WEBSOCKET_URL = (() => {
@@ -27,6 +27,8 @@ export class AppComponent {
   showBoard: boolean = false;
   showAvailableGames: boolean = false;
   availableGames: any[] = [];
+  winningPlayerId: number | null = null;
+  gameEnded: boolean = false;
 
   constructor() {
     // register ToastService on window so the component can delegate to it without import cycles
@@ -51,6 +53,9 @@ export class AppComponent {
   }
 
   move(i: number, j: number) {
+    if (this.gameEnded) {
+      return;
+    }
     console.log(i + " " + j);
     const message: Message = {
       messageType: 'MOVE_ATTEMPT',
@@ -119,6 +124,9 @@ export class AppComponent {
           break;
         case 'GAME_ERROR':
           this.handleGameError(message.data as GameErrorData);
+          break;
+        case 'RESULT':
+          this.handleResult(message.data as ResultData);
           break;
         default:
           console.log('Unknown message type:', message.messageType);
@@ -223,6 +231,42 @@ export class AppComponent {
       try { errMsg = JSON.stringify(data); } catch (e) { /* keep fallback */ }
     }
     this.toast(errMsg);
+  }
+
+  private handleResult(data: ResultData) {
+    console.log('Received RESULT:', data);
+    this.gameEnded = true;
+    this.triggerWinnerAnimation(data.winningPlayer);
+  }
+
+  private triggerWinnerAnimation(winnerId: number) {
+    // Reset first to ensure animation can restart
+    this.winningPlayerId = null;
+    
+    // Use setTimeout to allow Angular to detect the change
+    setTimeout(() => {
+      this.winningPlayerId = winnerId;
+      // Animation will run 10 times via CSS
+      
+      // Clear winner after 10 seconds (10 * 1s animation)
+      setTimeout(() => {
+        this.winningPlayerId = null;
+      }, 10000);
+    }, 10);
+  }
+
+  restartGame() {
+    this.gameEnded = false;
+    this.winningPlayerId = null;
+    this.initializeBoard();
+  }
+
+  isCurrentPlayerWinner(): boolean {
+    return this.winningPlayerId !== null && this.winningPlayerId === this.playerId;
+  }
+
+  isOpponentWinner(): boolean {
+    return this.winningPlayerId !== null && this.opponentId !== '' && this.winningPlayerId === Number(this.opponentId);
   }
 
   getGameCardBackground(gameId: number): string {

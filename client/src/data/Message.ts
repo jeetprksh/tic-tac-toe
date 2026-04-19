@@ -12,8 +12,9 @@ export interface AvailableGame { gameId: number; players: AvailableGamePlayer[];
 export interface AvailableGamesData { availableGames: AvailableGame[]; }
 export interface JoinGameData { gameId: number; playerId: number; }
 export interface StartNewData { playerId: number; }
+export interface ResultData { resultType: string; winningPlayer: number; }
 
-export type MessageData = string | MoveAttemptData | PlayerMoveData | OnlineAckData | GameErrorData | NewGameStartedData | NewPlayerCreatedData | JoinedGameData | AvailableGamesData | JoinGameData | StartNewData;
+export type MessageData = string | MoveAttemptData | PlayerMoveData | OnlineAckData | GameErrorData | NewGameStartedData | NewPlayerCreatedData | JoinedGameData | AvailableGamesData | JoinGameData | StartNewData | ResultData;
 
 export interface Message {
   messageType: string;

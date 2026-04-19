@@ -26,7 +26,7 @@
 <div *ngIf="showBoard" class="board-page">
   <div class="board-header"></div>
   <div class="board-screen">
-    <div class="player-info-card current-player">
+    <div class="player-info-card current-player" [class.winner]="isCurrentPlayerWinner()">
       <h5>You</h5>
       <div class="player-info-row">
         <span class="player-info-value">P#{{ playerId || '-' }}</span>
@@ -42,12 +42,12 @@
     <div class="board-grid" role="grid" aria-label="Tic tac toe board">
       <ng-container *ngFor="let row of board; let i = index">
         <ng-container *ngFor="let col of row; let j = index">
-          <div class="board-cell" role="gridcell" (click)="move(i,j)">{{ board[i][j] }}</div>
+          <div class="board-cell" role="gridcell" [class.disabled]="gameEnded" (click)="!gameEnded && move(i,j)">{{ board[i][j] }}</div>
         </ng-container>
       </ng-container>
     </div>
 
-    <div class="player-info-card opponent-player">
+    <div class="player-info-card opponent-player" [class.winner]="isOpponentWinner()">
       <h5>Opponent</h5>
       <div class="player-info-row">
         <span class="player-info-value">P#{{ opponentId || '-' }}</span>
@@ -62,6 +62,6 @@
   </div>
   <div class="board-footer">
     <button class="footer-button leave-button">Leave</button>
-    <button class="footer-button restart-button">Restart</button>
+    <button class="footer-button restart-button" (click)="restartGame()">Restart</button>
   </div>
 </div>

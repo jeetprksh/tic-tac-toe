@@ -32,6 +32,15 @@
   background: #f5f5f5;
 }
 
+.board-cell.disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.board-cell.disabled:hover {
+  background: #fff;
+}
+
 .start-screen {
   display: flex;
   justify-content: center;
@@ -166,6 +175,20 @@
   gap: 3px;
   border: #666 solid 1px;
   align-items: center;
+  transition: transform 0.5s ease-in-out;
+}
+
+.player-info-card.winner {
+  animation: winner-pulse 1s ease-in-out 10;
+}
+
+@keyframes winner-pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
 }
 
 .player-info-row {
