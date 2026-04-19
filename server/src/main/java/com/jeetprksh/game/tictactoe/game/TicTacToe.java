@@ -36,8 +36,6 @@ public class TicTacToe {
         board[i][j] = null;
       }
     }
-
-    players.clear();
   }
 
   public void addPlayer(Player player) throws Exception {

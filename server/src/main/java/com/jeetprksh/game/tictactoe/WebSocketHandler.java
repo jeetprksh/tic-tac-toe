@@ -57,6 +57,11 @@ public class WebSocketHandler extends TextWebSocketHandler {
                   payload, new TypeToken<GameMessage<JoinGameMessage>>(){}.getType());
           joinGame(session, joinMessage);
         }
+        case RESTART_GAME -> {
+          GameMessage<RestartGameMessage> restartGameMessage = gson.fromJson(
+                  payload, new TypeToken<GameMessage<RestartGameMessage>>(){}.getType());
+          restartGame(session, restartGameMessage);
+        }
       }
     } catch (Exception e) {
       sendErrorMessage(session, "Error processing the message.");
@@ -161,6 +166,26 @@ public class WebSocketHandler extends TextWebSocketHandler {
         GameMessage<ResultMessage> resultMessage = new GameMessage<>(MessageType.RESULT.getValue(), resultEvent);
         sendMessageToPlayers(players, resultMessage);
       }
+    } else {
+      sendErrorMessage(session, "Invalid game id");
+    }
+  }
+
+  private void restartGame(WebSocketSession session,
+                           GameMessage<RestartGameMessage> message) throws IOException {
+    Optional<TicTacToe> gameOptional =
+            games.stream().filter(g -> g.getGameInfo().gameId() == message.data().gameId()).findFirst();
+    if (gameOptional.isPresent()) {
+      TicTacToe game = gameOptional.get();
+      game.reset();
+
+      GameRestartedMessage restartedMessage = new GameRestartedMessage(message.data().gameId());
+      GameMessage<GameRestartedMessage> gameMessage =
+              new GameMessage<>(MessageType.GAME_RESTARTED.getValue(), restartedMessage);
+
+      List<Integer> playerIds = game.getGameInfo().players().stream().map(PlayerInfo::playerId).toList();
+      List<Player> players = playerSessions.keySet().stream().filter(p -> playerIds.contains(p.getId())).toList();
+      sendMessageToPlayers(players, gameMessage);
     } else {
       sendErrorMessage(session, "Invalid game id");
     }
